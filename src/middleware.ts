@@ -6,7 +6,7 @@ import { NextResponse, type NextRequest } from "next/server";
  * server-side (requireUser / requirePermission).
  */
 const COOKIE = process.env.NODE_ENV === "production" ? "__Host-kcmsc_session" : "kcmsc_session";
-const PUBLIC_PATHS = ["/login"];
+const PUBLIC_PATHS = ["/login", "/recover", "/reset-password"];
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;

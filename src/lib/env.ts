@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+const optional = <T extends z.ZodTypeAny>(t: T) => z.preprocess((v) => (v === "" ? undefined : v), t.optional());
+
 const schema = z.object({
   DATABASE_URL: z.string().url(),
   APP_SECRET: z.string().min(32, "APP_SECRET must be at least 32 characters"),
@@ -10,6 +12,10 @@ const schema = z.object({
   LOGIN_WINDOW_MINUTES: z.coerce.number().int().positive().default(15),
   LOGIN_LOCK_MINUTES: z.coerce.number().int().positive().default(15),
   TRUST_PROXY: z.enum(["true", "false"]).default("false").transform((v) => v === "true"),
+  // Optional: enables email-based password recovery (link base URL, SMTP connection URL, sender).
+  APP_URL: optional(z.string().url()),
+  SMTP_URL: optional(z.string().min(1)),
+  MAIL_FROM: optional(z.string().min(3)),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
 });
 

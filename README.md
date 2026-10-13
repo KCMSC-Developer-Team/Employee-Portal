@@ -29,7 +29,7 @@ kcmsc-staff/
 │  │  ├─ auth/      password, session, rate-limit, recovery     S2
 │  │  ├─ authz/     authorize(), scope checks, role granting    S2, S5
 │  │  ├─ staff/     queries (no observation), mutations         S3
-│  │  ├─ requests/  submit, approve/reject (transactional)      S4
+│  │  ├─ requests/  diff.ts, service.ts (submit/approve/reject)   ✅ S4
 │  │  ├─ observation/ leader-only service + revisions           S5
 │  │  ├─ dashboard/ aggregate queries (counts only)             S6
 │  │  └─ import/    parse, map, validate, stage, reconcile      S6
@@ -64,7 +64,7 @@ Production: `npm run build`, `npx prisma migrate deploy`, HTTPS only, `FILE_STOR
 - [x] S1 Architecture, schema, DB guards, config, permission catalog
 - [x] S2 Seed, Argon2id, sessions, rate limiting, login/first-login change, authz policy, admin-issued reset (email self-recovery deferred to S4)
 - [x] S3 Staff profile + education/experience, admin create/edit, search/filter/pagination, own-profile view, reference data (photo upload → S4, employment status change → S4)
-- [ ] S4 Change requests, approve/reject, audit history, resignation, photo upload/serving
+- [x] S4 Change requests (diff, approve/reject, stale-check, self-review block), employment status + resignation, account enable/disable/reset, photo upload (sharp re-encode) + authenticated serving, email recovery (optional), audit log + per-record history
 - [ ] S5 Leader roles, Observation service + revisions, role-granting rules, security tests
 - [ ] S6 Dashboard charts, Excel import, authorised reports
 - [ ] S7 Full test suite, deployment guide, final security review
@@ -72,3 +72,11 @@ Production: `npm run build`, `npx prisma migrate deploy`, HTTPS only, `FILE_STOR
 ## Reference data
 
 Departments, designations and employment categories (“Joined As”) start empty. Add them at /reference (institution-wide admins) before creating staff.
+
+## Stage 4 notes
+
+- Employees can request changes to personal/contact/education/experience data and the photograph. They cannot request designation, department, joining date, employment status or anything Observation-related.
+- One pending request per employee (DB-enforced). Approval re-checks every item's old value against the live record; if anything moved, the whole approval rolls back and the reviewer must reject (with a reason) and ask for resubmission.
+- Reviewers cannot decide their own request. Employment-status changes never touch the login account; disabling access is a separate action.
+- Email recovery needs `APP_URL`, `SMTP_URL` and `MAIL_FROM`; otherwise recovery is admin-issued. A compromised mailbox can take over that account — consider MFA before production for Leader accounts.
+- The ordinary audit log hides all Observation-related events.

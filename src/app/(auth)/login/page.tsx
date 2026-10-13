@@ -25,6 +25,7 @@ export default function LoginPage() {
           {pending ? "Signing in…" : "Sign in"}
         </button>
       </form>
+      <p className="mt-4 text-center text-sm"><a href="/recover" className="underline text-slate-600">Forgot password?</a></p>
     </main>
   );
 }

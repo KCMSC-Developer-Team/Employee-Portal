@@ -15,7 +15,7 @@ export interface StaffFormState {
 
 interface Ref { id: string; name: string }
 interface Props {
-  mode: "create" | "edit";
+  mode: "create" | "edit" | "request"; // request = employee change request (restricted fields + photo)
   action: (prev: StaffFormState, fd: FormData) => Promise<StaffFormState>;
   defaults: Record<string, string>;
   refs: { departments: Ref[]; designations: Ref[]; categories: Ref[] };
@@ -90,11 +90,11 @@ export function StaffForm({ mode, action, defaults, refs, recordId, version, can
 
       <Card title="Identity & employment">
         {field("name", "1. Name")}
-        {field("staffId", "2. ID No.", { readOnly: mode === "edit", max: 32 })}
-        {select("designationId", "3. Designation", asOpts(refs.designations))}
-        {select("categoryId", "4. Joined as", asOpts(refs.categories))}
-        {select("departmentId", "Department", asOpts(refs.departments))}
-        {field("joiningDate", "5. Joining date", { type: "date" })}
+        {field("staffId", "2. ID No.", { readOnly: mode !== "create", max: 32 })}
+        {mode !== "request" && select("designationId", "3. Designation", asOpts(refs.designations))}
+        {mode !== "request" && select("categoryId", "4. Joined as", asOpts(refs.categories))}
+        {mode !== "request" && select("departmentId", "Department", asOpts(refs.departments))}
+        {mode !== "request" && field("joiningDate", "5. Joining date", { type: "date" })}
         {field("dateOfBirth", "6. Date of birth", { type: "date" })}
         {field("subject", "7. Academic discipline/subject", { wide: true })}
       </Card>
@@ -148,6 +148,20 @@ export function StaffForm({ mode, action, defaults, refs, recordId, version, can
         {field("permanentAddress", "20. Permanent address", { wide: true })}
       </Card>
 
+      {mode === "request" && (
+        <fieldset className="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
+          <legend className="px-1 text-sm font-semibold text-slate-600">Photograph &amp; note</legend>
+          <label className="block text-sm">New photograph (JPEG/PNG/WebP, max 3 MB)
+            <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" className="mt-1 block text-sm" />
+            {errs.photo && <span className="text-xs text-red-600">{errs.photo}</span>}
+          </label>
+          <label className="block text-sm">Note to reviewer (optional)
+            <textarea name="note" rows={2} maxLength={500} defaultValue={dv("note")} className={box} />
+          </label>
+          <p className="text-xs text-slate-500">Your changes will be reviewed by an administrator. Your official record does not change until approved.</p>
+        </fieldset>
+      )}
+
       {mode === "create" && canCreateAccount && (
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" name="createAccount" defaultChecked /> Create a login account with a random one-time password
@@ -155,7 +169,7 @@ export function StaffForm({ mode, action, defaults, refs, recordId, version, can
       )}
 
       <button disabled={pending} className="rounded bg-slate-900 px-5 py-2 text-white disabled:opacity-60">
-        {pending ? "Saving…" : mode === "create" ? "Create staff record" : "Save changes"}
+        {pending ? "Saving…" : mode === "create" ? "Create staff record" : mode === "request" ? "Submit for approval" : "Save changes"}
       </button>
     </form>
   );

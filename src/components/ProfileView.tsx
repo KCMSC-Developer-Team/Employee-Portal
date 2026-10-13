@@ -32,9 +32,14 @@ export function ProfileView({ p }: { p: StaffProfile }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-4">
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-slate-200 text-xl font-semibold text-slate-600" aria-label="No photograph yet">
-          {initials}
-        </div>
+        {p.photoFileId ? (
+          // eslint-disable-next-line @next/next/no-img-element -- private, authenticated route; next/image optimisation not applicable
+          <img src={`/api/files/${p.photoFileId}`} alt={`Photograph of ${p.name}`} className="h-20 w-20 rounded-full object-cover" />
+        ) : (
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-slate-200 text-xl font-semibold text-slate-600" aria-label="No photograph yet">
+            {initials}
+          </div>
+        )}
         <div>
           <h1 className="text-xl font-semibold">{p.name}</h1>
           <p className="text-sm text-slate-600">

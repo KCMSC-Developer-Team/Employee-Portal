@@ -171,6 +171,7 @@ export function formToFlat(fd: FormData): Record<string, string> {
   const out: Record<string, string> = {};
   const put = (k: string) => { const v = fd.get(k); out[k] = typeof v === "string" ? v : ""; };
   SCALAR_FIELDS.forEach(put);
+  put("note");
   for (const l of EDUCATION_LEVELS) EDU_FIELDS.forEach((f) => put(`education.${l}.${f}`));
   for (const s of EXP_SLOTS) EXP_FIELDS.forEach((f) => put(`experience.${s}.${f}`));
   return out;
@@ -189,3 +190,36 @@ export function flattenErrors(err: z.ZodError): Record<string, string> {
 }
 
 export const hasRowContent = hasContent;
+
+/* ───────── employee change requests (Stage 4) ───────── */
+
+// Employees may request changes to these only. Excluded on purpose: staffId, designation, "joined as",
+// department, joining date, employment status (HR-controlled) and Observation (Leader-only, never requestable).
+export const REQUEST_SCALAR_FIELDS = [
+  "name", "dateOfBirth", "subject", "additionalQualifications", "mobile", "email", "maritalStatus",
+  "bloodGroup", "homeDistrict", "nidOrPassport", "presentAddress", "permanentAddress",
+] as const;
+export type RequestScalarField = (typeof REQUEST_SCALAR_FIELDS)[number];
+
+export const requestFieldSchema: Record<RequestScalarField, z.ZodTypeAny> = {
+  name: staffShape.name, dateOfBirth: staffShape.dateOfBirth, subject: staffShape.subject,
+  additionalQualifications: staffShape.additionalQualifications, mobile: staffShape.mobile, email: staffShape.email,
+  maritalStatus: staffShape.maritalStatus, bloodGroup: staffShape.bloodGroup, homeDistrict: staffShape.homeDistrict,
+  nidOrPassport: staffShape.nidOrPassport, presentAddress: staffShape.presentAddress, permanentAddress: staffShape.permanentAddress,
+};
+
+export const requestSchema = z
+  .object({
+    name: staffShape.name, dateOfBirth: staffShape.dateOfBirth, subject: staffShape.subject,
+    additionalQualifications: staffShape.additionalQualifications, mobile: staffShape.mobile, email: staffShape.email,
+    maritalStatus: staffShape.maritalStatus, bloodGroup: staffShape.bloodGroup, homeDistrict: staffShape.homeDistrict,
+    nidOrPassport: staffShape.nidOrPassport, presentAddress: staffShape.presentAddress, permanentAddress: staffShape.permanentAddress,
+    education: staffShape.education, experience: staffShape.experience,
+  })
+  .superRefine((v, ctx) => crossChecks({ dateOfBirth: v.dateOfBirth, joiningDate: null }, ctx));
+export type RequestInput = z.infer<typeof requestSchema>;
+
+export const parseRequestForm = (fd: FormData) => requestSchema.safeParse(formToObject(fd));
+
+export const eduRowSchemaFor = (level: string) => (level === "NTRCA" ? ntrcaRow : level === "OTHER" ? otherRow : eduRow);
+export const expRowSchema = expRow;
