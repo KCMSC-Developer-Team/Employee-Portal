@@ -3,9 +3,9 @@ import { currentSession, STAFF_ROLES } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import * as XLSX from "xlsx";
 import bcrypt from "bcryptjs";
-const allowed = ["fullNameEnglish","fullNameBangla","employeeId","designation","dateOfJoining","position","department","supervisor","photoUrl","mobile","personalEmail","fatherName","motherName","dateOfBirth","gender","bloodGroup","religion","maritalStatus","homeDistrict","nidPassport","permanentAddress","presentAddress","secondary","higherSecondary","graduation","masters","bed","med","ntrca","otherTraining","jobExperiences","sheetObservations"] as const;
+const allowed = ["fullNameEnglish","fullNameBangla","employeeId","designation","dateOfJoining","position","department","supervisor","photoUrl","mobile","personalEmail","fatherName","motherName","dateOfBirth","gender","bloodGroup","religion","maritalStatus","homeDistrict","nidPassport","permanentAddress","presentAddress","secondary","higherSecondary","graduation","masters","bed","med","ntrca","otherTraining","jobExperiences"] as const;
 const dateKeys = new Set(["dateOfJoining","dateOfBirth"]);
-const jsonKeys = new Set(["secondary","higherSecondary","graduation","masters","bed","med","ntrca","otherTraining","jobExperiences","sheetObservations"]);
+const jsonKeys = new Set(["secondary","higherSecondary","graduation","masters","bed","med","ntrca","otherTraining","jobExperiences"]);
 export async function POST(req:Request){
  const s=await currentSession(); if(!s?.user)return NextResponse.json({error:"Unauthorised"},{status:401});
  if(!STAFF_ROLES.includes((s.user as any).role))return NextResponse.json({error:"Forbidden"},{status:403});
@@ -22,9 +22,25 @@ export async function POST(req:Request){
   let created=0,skipped=0; const errors:string[]=[];
   for(let index=0;index<rows.length;index++){
    const row=rows[index]; const mapped:any={};
-   for(const [column,field] of Object.entries(mapping)){const value=row[column]; if(value===undefined||String(value).trim()==="")continue;const raw=String(value).trim();if(jsonKeys.has(field)){try{mapped[field]=JSON.parse(raw);}catch{mapped[field]=field==="jobExperiences"||field==="sheetObservations"?[]:{};}}else if(dateKeys.has(field)){const date=value instanceof Date?value:new Date(raw);if(!Number.isNaN(date.getTime()))mapped[field]=date;}else mapped[field]=raw;}
+   let invalidJson=false,invalidDate=false;
+   for(const [column,field] of Object.entries(mapping)){
+    const value=row[column];
+    if(value===undefined||String(value).trim()==="")continue;
+    const raw=String(value).trim();
+    if(jsonKeys.has(field)){
+     try{mapped[field]=JSON.parse(raw);}catch{invalidJson=true;}
+    }else if(dateKeys.has(field)){
+     const date=value instanceof Date?value:new Date(raw);
+     if(!Number.isNaN(date.getTime()))mapped[field]=date;else invalidDate=true;
+    }else mapped[field]=raw;
+   }
    const employeeId=String(mapped.employeeId||"").trim();
    if(!employeeId||!mapped.fullNameEnglish){skipped++;continue;}
+   if(invalidJson||invalidDate||
+    ["secondary","higherSecondary","graduation","masters","bed","med","ntrca","otherTraining"].some(key=>mapped[key]!==undefined&&(!mapped[key]||typeof mapped[key]!=="object"||Array.isArray(mapped[key])))||
+    (mapped.jobExperiences!==undefined&&(!Array.isArray(mapped.jobExperiences)||mapped.jobExperiences.length>3||mapped.jobExperiences.some((entry:unknown)=>!entry||typeof entry!=="object"||Array.isArray(entry))))){
+    skipped++;if(errors.length<5)errors.push(`Row ${index+2}: education must be JSON objects and job experiences must contain no more than three entries.`);continue;
+   }
    try {
     const passwordHash=await bcrypt.hash(employeeId,12); const email=`employee-${employeeId}@employees.kcmsc.edu.bd`;
     await prisma.user.create({data:{email,passwordHash,role:"EMPLOYEE",createdById:(s.user as any).id,employee:{create:mapped}}}); created++;

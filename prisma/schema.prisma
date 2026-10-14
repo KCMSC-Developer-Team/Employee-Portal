@@ -84,8 +84,11 @@ model Observation {
   employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
   subject     String
   description String
+  observationDate DateTime @default(now()) @db.Date
   createdById String
   createdAt   DateTime @default(now())
+
+  @@index([employeeId, observationDate])
 }
 
 model ChangeRequest {

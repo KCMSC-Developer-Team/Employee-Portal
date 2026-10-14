@@ -10,7 +10,7 @@ export default async function Dashboard() {
  const [total,pending,observations,mine] = await Promise.all([
   isStaff ? prisma.employee.count() : prisma.employee.count({where:{userId:id}}),
   isStaff ? prisma.changeRequest.count({where:{status:"PENDING"}}) : prisma.changeRequest.count({where:{submittedById:id,status:"PENDING"}}),
-  role==="EMPLOYEE" ? prisma.observation.count({where:{employee:{userId:id}}}) : prisma.observation.count(),
+  role==="COMPUTER_OPERATOR" ? Promise.resolve(0) : role==="EMPLOYEE" ? prisma.observation.count({where:{employee:{userId:id}}}) : prisma.observation.count(),
   prisma.employee.findFirst({where:{userId:id},select:{id:true,fullNameEnglish:true,employeeId:true,designation:true,photoUrl:true}})
  ]);
  const hour = new Date().getHours();
