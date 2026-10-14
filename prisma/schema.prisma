@@ -54,6 +54,7 @@ model Employee {
   ntrca             Json?
   otherTraining     Json?
   jobExperiences    Json?
+  sheetObservations Json?
   fatherName        String?
   motherName        String?
   dateOfBirth       DateTime?

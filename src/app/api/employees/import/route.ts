@@ -3,8 +3,9 @@ import { currentSession, STAFF_ROLES } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import * as XLSX from "xlsx";
 import bcrypt from "bcryptjs";
-const allowed = ["fullNameEnglish","fullNameBangla","employeeId","designation","position","department","supervisor","mobile","personalEmail","fatherName","motherName","gender","bloodGroup","religion","maritalStatus","homeDistrict","nidPassport","permanentAddress","presentAddress"] as const;
+const allowed = ["fullNameEnglish","fullNameBangla","employeeId","designation","dateOfJoining","position","department","supervisor","photoUrl","mobile","personalEmail","fatherName","motherName","dateOfBirth","gender","bloodGroup","religion","maritalStatus","homeDistrict","nidPassport","permanentAddress","presentAddress","secondary","higherSecondary","graduation","masters","bed","med","ntrca","otherTraining","jobExperiences","sheetObservations"] as const;
 const dateKeys = new Set(["dateOfJoining","dateOfBirth"]);
+const jsonKeys = new Set(["secondary","higherSecondary","graduation","masters","bed","med","ntrca","otherTraining","jobExperiences","sheetObservations"]);
 export async function POST(req:Request){
  const s=await currentSession(); if(!s?.user)return NextResponse.json({error:"Unauthorised"},{status:401});
  if(!STAFF_ROLES.includes((s.user as any).role))return NextResponse.json({error:"Forbidden"},{status:403});
@@ -21,7 +22,7 @@ export async function POST(req:Request){
   let created=0,skipped=0; const errors:string[]=[];
   for(let index=0;index<rows.length;index++){
    const row=rows[index]; const mapped:any={};
-   for(const [column,field] of Object.entries(mapping)){const value=row[column]; if(value!==undefined && String(value).trim()!=="")mapped[field]=String(value).trim();}
+   for(const [column,field] of Object.entries(mapping)){const value=row[column]; if(value===undefined||String(value).trim()==="")continue;const raw=String(value).trim();if(jsonKeys.has(field)){try{mapped[field]=JSON.parse(raw);}catch{mapped[field]=field==="jobExperiences"||field==="sheetObservations"?[]:{};}}else if(dateKeys.has(field)){const date=value instanceof Date?value:new Date(raw);if(!Number.isNaN(date.getTime()))mapped[field]=date;}else mapped[field]=raw;}
    const employeeId=String(mapped.employeeId||"").trim();
    if(!employeeId||!mapped.fullNameEnglish){skipped++;continue;}
    try {

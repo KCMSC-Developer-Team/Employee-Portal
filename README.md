@@ -68,3 +68,19 @@ The profile stores education and job experience sections as JSON so the full for
 - The Developer seed account uses Employee ID `2603` and email `zarif@kcmsc.edu.bd`; the seed sets its initial password to `2603`. Change this after signing in.
 - Excel/CSV imports provide a column-mapping step and create employee login accounts for imported rows. Map both English name and Employee ID.
 - Only the Developer can bulk-remove employees. Employee ID `2603` is protected from bulk deletion.
+
+
+## Profile and Performance Sheet update
+
+The employee profile now follows the official KC Model School & College Profile and Performance Sheet, including employment details, all eight education/training sections, three job experiences, personal information, photo URL, and four profile-sheet observation entries. Existing education/experience JSON columns are reused. A new nullable `Employee.sheetObservations` JSON column stores the four sheet observation entries.
+
+After replacing the project files, keep your existing `.env` and run:
+
+```powershell
+npm ci
+npx prisma generate
+npx prisma db push
+npm run dev
+```
+
+`prisma db push` synchronizes the additive schema change without resetting the database. Review the Prisma output before confirming if it warns about destructive changes. Do not run `prisma migrate reset`. The environment here did not allow a complete dependency installation/type-check, so run these commands locally and report any compiler error verbatim.
