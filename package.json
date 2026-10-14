@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "prisma generate && next build",
-    "start": "next start",
-    "lint": "next lint",
-    "db:generate": "prisma generate",
+    "dev": "npx next dev",
+    "build": "npx prisma generate && npx next build",
+    "start": "npx next start",
+    "lint": "npx eslint .",
+    "db:generate": "npx prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts"

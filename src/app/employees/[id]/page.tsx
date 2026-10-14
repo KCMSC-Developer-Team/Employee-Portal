@@ -3,4 +3,198 @@ import { requireUser, STAFF_ROLES } from "@/lib/auth";
 import { Shell, PageHeading } from "@/components/ui";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-export default async function EmployeeDetail({params}:{params:Promise<{id:string}>}){const s=await requireUser();if(!STAFF_ROLES.includes(s.user?.role||""))redirect("/employees");const {id}=await params;const e=await prisma.employee.findUnique({where:{id},include:{user:{select:{email:true}},observations:role==="COMPUTER_OPERATOR"?false:{orderBy:{createdAt:"desc"}}}});if(!e)notFound();const observations=Array.isArray(e.observations)?e.observations:[];const fields=[["Full name",e.fullNameEnglish],["Bangla name",e.fullNameBangla],["Employee ID",e.employeeId],["Designation",e.designation],["Position",e.position],["Department",e.department],["Supervisor",e.supervisor],["Date of joining",e.dateOfJoining?.toLocaleDateString()],["Mobile",e.mobile],["Email",e.personalEmail||e.user?.email],["Father",e.fatherName],["Mother",e.motherName],["Date of birth",e.dateOfBirth?.toLocaleDateString()],["Gender",e.gender],["Blood group",e.bloodGroup],["Religion",e.religion],["Marital status",e.maritalStatus],["Permanent address",e.permanentAddress],["Present address",e.presentAddress],["NID / Passport",e.nidPassport],["Home district",e.homeDistrict]];return <Shell role={s.user?.role||"EMPLOYEE"} email={s.user?.email||""}><PageHeading eyebrow="Employee record" title={e.fullNameEnglish} description={`${e.designation||"Employee"} · ${e.employeeId||"No employee ID"}`} action={<><Link href={`/employees/${e.id}/edit`} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold">Edit profile</Link><Link href={`/employees/${e.id}/observation`} className="rounded-xl bg-emerald-800 px-4 py-3 text-sm font-semibold text-white">Add observation</Link></>}/><div className="grid gap-5 xl:grid-cols-[1.4fr_.6fr]"><section className="rounded-2xl border border-slate-200 bg-white p-6"><h2 className="mb-4 font-semibold">Profile information</h2><div className="grid gap-x-8 sm:grid-cols-2">{fields.map(([k,v])=><div key={k} className="border-b border-slate-100 py-3"><div className="text-xs text-slate-400">{k}</div><div className="mt-1 text-sm font-medium">{v||"Not provided"}</div></div>)}</div><details className="mt-6 rounded-xl bg-slate-50 p-4"><summary className="cursor-pointer text-sm font-semibold">Education and experience data</summary><div className="mt-4 space-y-3 text-xs">{[["Secondary",e.secondary],["Higher Secondary",e.higherSecondary],["Graduation",e.graduation],["Master's",e.masters],["BEd",e.bed],["MEd",e.med],["NTRCA",e.ntrca],["Other training",e.otherTraining],["Job experiences",e.jobExperiences]].map(([k,v])=><div key={k as string}><div className="font-semibold">{k as string}</div><pre className="mt-1 whitespace-pre-wrap break-words text-slate-500">{v?JSON.stringify(v,null,2):"Not provided"}</pre></div>)}</div></details></section>{role!=="COMPUTER_OPERATOR"&&<section className="rounded-2xl border border-slate-200 bg-white p-6"><h2 className="font-semibold">Observations</h2><p className="mt-1 text-xs text-slate-500">Restricted information</p><div className="mt-4 space-y-3">{observations.map(o=><div key={o.id} className="rounded-xl bg-slate-50 p-4"><div className="text-sm font-semibold">{o.subject}</div><div className="mt-1 text-xs text-slate-400">{o.createdAt.toLocaleDateString()}</div><p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600">{o.description}</p></div>)}{!observations.length&&<p className="py-4 text-sm text-slate-500">No observations recorded.</p>}</div></section>}</div></Shell>}
+
+export default async function EmployeeDetail({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const session = await requireUser();
+  const role = session.user?.role ?? "EMPLOYEE";
+  const email = session.user?.email ?? "";
+
+  if (!STAFF_ROLES.includes(role)) {
+    redirect("/employees");
+  }
+
+  const { id } = await params;
+
+  const employee = await prisma.employee.findUnique({
+    where: { id },
+    include: {
+      user: {
+        select: {
+          email: true,
+        },
+      },
+      observations:
+        role === "COMPUTER_OPERATOR"
+          ? false
+          : {
+              orderBy: {
+                createdAt: "desc",
+              },
+            },
+    },
+  });
+
+  if (!employee) {
+    notFound();
+  }
+
+  const observations =
+    role === "COMPUTER_OPERATOR" ? [] : employee.observations;
+
+  const fields: [string, string | Date | null | undefined][] = [
+    ["Full name (English)", employee.fullNameEnglish],
+    ["Full name (Bangla)", employee.fullNameBangla],
+    ["Employee ID", employee.employeeId],
+    ["Designation", employee.designation],
+    ["Position", employee.position],
+    ["Subject/Admin Dept.", employee.department],
+    ["Supervisor", employee.supervisor],
+    ["Date of joining", employee.dateOfJoining],
+    ["Father's name", employee.fatherName],
+    ["Mother's name", employee.motherName],
+    ["Date of birth", employee.dateOfBirth],
+    ["Gender", employee.gender],
+    ["Blood group", employee.bloodGroup],
+    ["Religion", employee.religion],
+    ["Marital status", employee.maritalStatus],
+    ["Permanent address", employee.permanentAddress],
+    ["Present address", employee.presentAddress],
+    ["NID/Passport No.", employee.nidPassport],
+    ["Home district", employee.homeDistrict],
+    ["Mobile number", employee.mobile],
+    ["Email", employee.personalEmail || employee.user?.email],
+  ];
+
+  function formatValue(value: string | Date | null | undefined) {
+    if (value == null || value === "") {
+      return "Not provided";
+    }
+
+    if (value instanceof Date) {
+      return value.toLocaleDateString();
+    }
+
+    return value;
+  }
+
+  const educationSections: [string, unknown][] = [
+    ["Secondary", employee.secondary],
+    ["Higher Secondary", employee.higherSecondary],
+    ["Graduation", employee.graduation],
+    ["Master's", employee.masters],
+    ["BEd", employee.bed],
+    ["MEd", employee.med],
+    ["NTRCA", employee.ntrca],
+    ["Other Degree/Training", employee.otherTraining],
+    ["Job Experiences", employee.jobExperiences],
+  ];
+
+  return (
+    <Shell role={role} email={email}>
+      <PageHeading
+        eyebrow="Employee record"
+        title={employee.fullNameEnglish}
+        description={`${employee.designation || "Employee"} · ${
+          employee.employeeId || "No employee ID"
+        }`}
+        action={
+          <>
+            <Link
+              href={`/employees/${employee.id}/edit`}
+              className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold"
+            >
+              Edit profile
+            </Link>
+
+            {role !== "COMPUTER_OPERATOR" && (
+              <Link
+                href={`/employees/${employee.id}/observation`}
+                className="rounded-xl bg-emerald-800 px-4 py-3 text-sm font-semibold text-white"
+              >
+                Add observation
+              </Link>
+            )}
+          </>
+        }
+      />
+
+      <div className="grid gap-5 xl:grid-cols-[1.4fr_.6fr]">
+        <section className="rounded-2xl border border-slate-200 bg-white p-6">
+          <h2 className="mb-4 font-semibold">Profile information</h2>
+
+          <div className="grid gap-x-8 sm:grid-cols-2">
+            {fields.map(([label, value]) => (
+              <div key={label} className="border-b border-slate-100 py-3">
+                <div className="text-xs text-slate-400">{label}</div>
+                <div className="mt-1 break-words text-sm font-medium">
+                  {formatValue(value)}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <details className="mt-6 rounded-xl bg-slate-50 p-4">
+            <summary className="cursor-pointer text-sm font-semibold">
+              Education and experience
+            </summary>
+
+            <div className="mt-4 space-y-4 text-xs">
+              {educationSections.map(([label, value]) => (
+                <div key={label}>
+                  <div className="font-semibold">{label}</div>
+                  <pre className="mt-1 whitespace-pre-wrap break-words font-sans text-slate-500">
+                    {value == null
+                      ? "Not provided"
+                      : typeof value === "string"
+                        ? value
+                        : JSON.stringify(value, null, 2)}
+                  </pre>
+                </div>
+              ))}
+            </div>
+          </details>
+        </section>
+
+        {role !== "COMPUTER_OPERATOR" && (
+          <section className="rounded-2xl border border-slate-200 bg-white p-6">
+            <h2 className="font-semibold">Observations</h2>
+            <p className="mt-1 text-xs text-slate-500">
+              Restricted information
+            </p>
+
+            <div className="mt-4 space-y-3">
+              {observations.map((observation) => (
+                <div
+                  key={observation.id}
+                  className="rounded-xl bg-slate-50 p-4"
+                >
+                  <div className="text-sm font-semibold">
+                    {observation.subject}
+                  </div>
+
+                  <div className="mt-1 text-xs text-slate-400">
+                    {observation.createdAt.toLocaleDateString()}
+                  </div>
+
+                  <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600">
+                    {observation.description}
+                  </p>
+                </div>
+              ))}
+
+              {observations.length === 0 && (
+                <p className="py-4 text-sm text-slate-500">
+                  No observations recorded.
+                </p>
+              )}
+            </div>
+          </section>
+        )}
+      </div>
+    </Shell>
+  );
+}

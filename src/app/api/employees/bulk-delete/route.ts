@@ -5,7 +5,9 @@ export async function POST(req:Request){
  const s=await currentSession(); if(!s?.user)return NextResponse.json({error:"Unauthorised"},{status:401});
  const actor=s.user as any; if(actor.role!=="DEVELOPER")return NextResponse.json({error:"Only the Developer can remove employees in bulk."},{status:403});
  let body:any;try{body=await req.json()}catch{return NextResponse.json({error:"Invalid request."},{status:400})}
- const ids=Array.isArray(body.ids)?Array.from(new Set(body.ids.filter((x:any)=>typeof x==="string"&&x.length<100))):[];
+ const ids: string[] = Array.isArray(body.ids)
+  ? Array.from(new Set<string>(body.ids.filter((x: unknown): x is string => typeof x === "string" && x.length < 100)))
+  : [];
  if(!ids.length)return NextResponse.json({error:"Select at least one employee."},{status:400});
  try{
   const records=await prisma.employee.findMany({where:{id:{in:ids}},select:{id:true,userId:true,employeeId:true}});

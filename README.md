@@ -84,3 +84,21 @@ npm run dev
 ```
 
 `prisma db push` synchronizes the additive schema change without resetting the database. Review the Prisma output before confirming if it warns about destructive changes. Do not run `prisma migrate reset`. The environment here did not allow a complete dependency installation/type-check, so run these commands locally and report any compiler error verbatim.
+
+## Troubleshooting: Next.js dev runtime / React Client Manifest
+
+If development shows `originalFactory is undefined` or a missing `segment-explorer-node.js#SegmentViewNode` in the React Client Manifest, stop the dev server with Ctrl+C and clear the generated Next.js cache (this does not touch the database or source files):
+
+```powershell
+Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue
+npm ci
+npx prisma generate
+npm run dev
+```
+
+For a production build, use `npm run build`. The build script invokes Prisma and Next.js through `npx` so Windows can resolve the local executables.
+
+
+## Build fix (October 2026)
+
+The employee creation API now includes the created employee relation in the Prisma result before reading its ID for the audit log. After extracting this project, run `npm ci`, `npx prisma generate`, and `npm run build`. Keep your existing `.env`; do not reset the database.
