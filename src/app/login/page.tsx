@@ -1,0 +1,8 @@
+import { SignInForm } from "@/components/forms";
+import { Brand } from "@/components/ui";
+export default function LoginPage() {
+ return <main className="grid min-h-screen bg-white lg:grid-cols-[1.05fr_.95fr]">
+  <section className="relative hidden overflow-hidden bg-[#123d31] p-12 text-white lg:flex lg:flex-col lg:justify-between"><Brand/><div className="relative z-10 max-w-xl pb-12"><div className="mb-5 inline-flex rounded-full border border-white/20 px-3 py-1.5 text-xs text-emerald-100">A clearer view of your people</div><h1 className="text-5xl font-semibold leading-[1.12] tracking-tight">Good systems make good work easier.</h1><p className="mt-6 max-w-md text-sm leading-7 text-emerald-100/80">One secure workspace for staff profiles, employee updates, approvals and institutional records.</p></div><div className="text-xs text-emerald-100/60">K C Model School & College · Staff portal</div><div className="absolute -right-28 top-1/4 h-96 w-96 rounded-full border border-white/10"/><div className="absolute -right-12 top-1/3 h-64 w-64 rounded-full border border-white/10"/></section>
+  <section className="flex items-center justify-center px-6 py-12"><div className="w-full max-w-[390px]"><div className="mb-10 lg:hidden"><Brand/></div><div className="text-xs font-bold uppercase tracking-[.18em] text-emerald-800">Welcome back</div><h2 className="mt-3 text-3xl font-semibold tracking-tight">Sign in to your account</h2><p className="mt-3 text-sm leading-6 text-slate-500">Use the account issued by your institution's computer operator or developer.</p><SignInForm/><p className="mt-8 text-center text-xs leading-5 text-slate-400">Access is restricted to authorised staff. Employee self-registration is disabled.</p></div></section>
+ </main>;
+}

@@ -1,48 +1,20 @@
-/**
- * Idempotent bootstrap: permissions, system roles, and (optionally) the Principal under the LEADER role
- * plus a first administrator. Run via `npm run db:seed` (Prisma loads .env).
- * Temporary passwords are printed ONCE to this console and never stored in plaintext.
- */
-import { PrismaClient } from "@prisma/client";
-import { seedRbac } from "../src/server/rbac/seed";
-import { provisionAccount } from "../src/server/auth/credentials";
-
+import { PrismaClient, Role } from "@prisma/client";
+import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
-async function bootstrapPerson(opts: { staffId?: string; name?: string; roleKey: string; designation: string; label: string }) {
-  const staffId = opts.staffId?.trim();
-  const name = opts.name?.trim();
-  if (!staffId || !name) {
-    console.warn(`[seed] ${opts.label}: staff ID / name not set — skipped.`);
-    return;
-  }
-  if (await prisma.staffMember.findUnique({ where: { staffId } })) {
-    console.log(`[seed] ${opts.label}: ${staffId} already exists — left unchanged (password NOT reset).`);
-    return;
-  }
-  const role = await prisma.role.findUniqueOrThrow({ where: { key: opts.roleKey } });
-  const designation = await prisma.designation.upsert({ where: { name: opts.designation }, update: {}, create: { name: opts.designation } });
-
-  const result = await prisma.$transaction(async (tx) => {
-    const staff = await tx.staffMember.create({ data: { staffId, name, designationId: designation.id } });
-    const { userId, temporaryPassword } = await provisionAccount(tx, staff.id);
-    // Bootstrap grant: the seed is the trusted root, so the account is its own grantor here only.
-    await tx.userRole.create({ data: { userId, roleId: role.id, grantedById: userId } });
-    await tx.auditEvent.create({
-      data: { actorId: userId, action: "seed.bootstrap", entityType: "UserAccount", entityId: userId, metadata: { role: opts.roleKey } },
-    });
-    return temporaryPassword;
-  });
-  console.log(`\n[seed] ${opts.label} created. Staff ID: ${staffId}\n[seed] One-time password (shown once, change at first login): ${result}\n`);
-}
-
 async function main() {
-  await seedRbac(prisma);
-  if (process.env.SEED_PRINCIPAL_STAFF_ID && process.env.SEED_PRINCIPAL_STAFF_ID === process.env.SEED_ADMIN_STAFF_ID) {
-    throw new Error("SEED_PRINCIPAL_STAFF_ID and SEED_ADMIN_STAFF_ID must differ");
-  }
-  await bootstrapPerson({ staffId: process.env.SEED_PRINCIPAL_STAFF_ID, name: process.env.SEED_PRINCIPAL_NAME, roleKey: "LEADER", designation: "Principal", label: "Principal (Authority)" });
-  await bootstrapPerson({ staffId: process.env.SEED_ADMIN_STAFF_ID, name: process.env.SEED_ADMIN_NAME, roleKey: "ADMIN_MANAGER", designation: "Administrator", label: "Administrator" });
+  const email = process.env.SEED_DEVELOPER_EMAIL || "developer@example.com";
+  const password = process.env.SEED_DEVELOPER_PASSWORD || "ChangeMe-Immediately-123!";
+  const passwordHash = await bcrypt.hash(password, 12);
+  await prisma.user.upsert({
+    where: { email },
+    update: {},
+    create: {
+      email, passwordHash, role: Role.DEVELOPER,
+      employee: { create: { fullNameEnglish: "System Developer", designation: "Developer" } }
+    }
+  });
+  console.log(`Seeded developer account: ${email}`);
+  console.log("Change the default password immediately after first login.");
 }
-
 main().finally(() => prisma.$disconnect());
