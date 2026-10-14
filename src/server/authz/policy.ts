@@ -87,3 +87,15 @@ export function canManageAccount(actor: AuthUser, targetUserId: string, targetPe
   if (!can(actor, "account:manage")) return false;
   return targetPermissions.every((p) => can(actor, p));
 }
+
+/**
+ * Full role-grant rule used by the role service. No self-grants. Leader roles need `leader:grant`
+ * (Leader-class). Ordinary roles need `role:assign:ordinary` AND the granter must already hold every
+ * permission in the role (no privilege escalation by handing out something stronger than your own).
+ */
+export function canGrantRoleFull(
+  actor: AuthUser, targetUserId: string, role: { isLeader: boolean; permissions: PermissionKey[] },
+): boolean {
+  if (!canGrantRole(actor, targetUserId, role)) return false;
+  return role.isLeader ? true : role.permissions.every((p) => can(actor, p));
+}

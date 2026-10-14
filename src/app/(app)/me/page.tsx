@@ -14,6 +14,7 @@ export default async function MyProfile() {
       <div className="mb-3 flex gap-4 text-sm">
         <Link className="underline" href="/me/edit">Request a change</Link>
         <Link className="underline" href="/me/requests">My requests</Link>
+        <Link className="underline" href="/me/observation">My observation</Link>
       </div>
       <ProfileView p={profile} />
       <p className="mt-4 text-xs text-slate-500">This is your approved official record. Changes take effect only after an administrator approves them.</p>

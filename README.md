@@ -65,7 +65,7 @@ Production: `npm run build`, `npx prisma migrate deploy`, HTTPS only, `FILE_STOR
 - [x] S2 Seed, Argon2id, sessions, rate limiting, login/first-login change, authz policy, admin-issued reset (email self-recovery deferred to S4)
 - [x] S3 Staff profile + education/experience, admin create/edit, search/filter/pagination, own-profile view, reference data (photo upload → S4, employment status change → S4)
 - [x] S4 Change requests (diff, approve/reject, stale-check, self-review block), employment status + resignation, account enable/disable/reset, photo upload (sharp re-encode) + authenticated serving, email recovery (optional), audit log + per-record history
-- [ ] S5 Leader roles, Observation service + revisions, role-granting rules, security tests
+- [x] S5 Leader roles, Observation service + revisions, role-granting rules, security tests
 - [ ] S6 Dashboard charts, Excel import, authorised reports
 - [ ] S7 Full test suite, deployment guide, final security review
 
@@ -80,3 +80,18 @@ Departments, designations and employment categories (“Joined As”) start empt
 - Reviewers cannot decide their own request. Employment-status changes never touch the login account; disabling access is a separate action.
 - Email recovery needs `APP_URL`, `SMTP_URL` and `MAIL_FROM`; otherwise recovery is admin-issued. A compromised mailbox can take over that account — consider MFA before production for Leader accounts.
 - The ordinary audit log hides all Observation-related events.
+
+
+## Stage 5 notes: Leader roles & Observation
+
+- Leader is not admin. The LEADER role holds only Leader permissions (a DB trigger enforces this). The Principal needs a separate admin role to use admin screens.
+- Observation is readable only by the employee concerned (read-only, `/me/observation`) and by Leaders within scope. Leaders cannot write their own observation. No delete exists; every edit creates a revision.
+- Observation tables are touched only by `src/server/observation/service.ts` (and later `src/server/import/`). Audit entries never contain the text.
+- Leader roles can be granted only by a Leader holding `leader:grant`. Ordinary role managers grant ordinary roles they themselves fully hold. No self-grants. The last institution-wide Leader cannot be revoked.
+
+### Running the security tests
+1. Create a dedicated empty database whose name contains `test`.
+2. Apply migrations **and** `prisma/sql/db_guards.sql` (required for the immutability tests).
+3. `TEST_DATABASE_URL=postgresql://... npm run test:security`
+
+These tests have not yet been executed by the author (no package registry access in the build sandbox); run them before relying on the system.

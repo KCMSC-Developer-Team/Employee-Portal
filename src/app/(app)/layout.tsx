@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/server/authz";
 import { can, scopeFor } from "@/server/authz/policy";
+import { canManageRoles } from "@/server/roles/service";
 import { logoutAction } from "../actions";
 
 // The layout is convenience (navigation). It is NOT the security boundary: every page and action re-checks.
@@ -11,6 +12,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const canRef = scopeFor(user, "staff:update") === "ALL";
   const rs = scopeFor(user, "request:review");
   const canReview = rs === "ALL" || rs.length > 0;
+  const os = scopeFor(user, "observation:read");
+  const canObs = os === "ALL" || os.length > 0;
   const link = "text-slate-600 hover:text-slate-900";
   return (
     <>
@@ -21,6 +24,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           {canStaff && <Link className={link} href="/staff">Staff</Link>}
           {canReview && <Link className={link} href="/requests">Requests</Link>}
           {can(user, "audit:read") && <Link className={link} href="/audit">Audit</Link>}
+          {canObs && <Link className={link} href="/observations">Observations</Link>}
+          {canManageRoles(user) && <Link className={link} href="/roles">Roles</Link>}
           {canRef && <Link className={link} href="/reference">Reference data</Link>}
           <span className="ml-auto text-slate-500">{user.name}</span>
           <form action={logoutAction}><button className="text-slate-600 underline">Sign out</button></form>

@@ -4,28 +4,10 @@
  * Temporary passwords are printed ONCE to this console and never stored in plaintext.
  */
 import { PrismaClient } from "@prisma/client";
-import { LEADER_PERMISSIONS, ORDINARY_PERMISSIONS, SYSTEM_ROLES, isLeaderPermission } from "../src/lib/permissions";
+import { seedRbac } from "../src/server/rbac/seed";
 import { provisionAccount } from "../src/server/auth/credentials";
 
 const prisma = new PrismaClient();
-
-async function seedRbac() {
-  for (const key of [...ORDINARY_PERMISSIONS, ...LEADER_PERMISSIONS]) {
-    await prisma.permission.upsert({ where: { key }, update: { isLeader: isLeaderPermission(key) }, create: { key, isLeader: isLeaderPermission(key) } });
-  }
-  for (const r of SYSTEM_ROLES) {
-    const role = await prisma.role.upsert({
-      where: { key: r.key },
-      update: { name: r.name, isLeader: r.isLeader },
-      create: { key: r.key, name: r.name, isLeader: r.isLeader, isSystem: true },
-    });
-    const perms = await prisma.permission.findMany({ where: { key: { in: [...r.permissions] } } });
-    await prisma.rolePermission.createMany({
-      data: perms.map((p) => ({ roleId: role.id, permissionId: p.id })),
-      skipDuplicates: true, // DB trigger rejects any leader/ordinary mismatch
-    });
-  }
-}
 
 async function bootstrapPerson(opts: { staffId?: string; name?: string; roleKey: string; designation: string; label: string }) {
   const staffId = opts.staffId?.trim();
@@ -55,7 +37,7 @@ async function bootstrapPerson(opts: { staffId?: string; name?: string; roleKey:
 }
 
 async function main() {
-  await seedRbac();
+  await seedRbac(prisma);
   if (process.env.SEED_PRINCIPAL_STAFF_ID && process.env.SEED_PRINCIPAL_STAFF_ID === process.env.SEED_ADMIN_STAFF_ID) {
     throw new Error("SEED_PRINCIPAL_STAFF_ID and SEED_ADMIN_STAFF_ID must differ");
   }

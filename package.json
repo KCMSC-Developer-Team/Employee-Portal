@@ -10,6 +10,7 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:unit": "vitest run tests/unit",
     "test:security": "vitest run tests/security",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
