@@ -11,12 +11,16 @@ export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: "Email and password",
-      credentials: { email: { label: "Email", type: "email" }, password: { label: "Password", type: "password" } },
+      credentials: { email: { label: "Employee ID / email", type: "text" }, password: { label: "Password", type: "password" } },
       async authorize(credentials) {
         if (!credentials?.email || !credentials.password) return null;
-        const user = await prisma.user.findUnique({ where: { email: credentials.email.toLowerCase() } });
+        const login = credentials.email.trim();
+        const user = await prisma.user.findFirst({
+          where: { OR: [{ email: login.toLowerCase() }, { employee: { is: { employeeId: login } } }] },
+          include: { employee: true }
+        });
         if (!user || !user.active || !(await bcrypt.compare(credentials.password, user.passwordHash))) return null;
-        return { id: user.id, email: user.email, name: user.email, role: user.role } as any;
+        return { id: user.id, email: user.email, name: user.employee?.fullNameEnglish || user.email, role: user.role } as any;
       }
     })
   ],

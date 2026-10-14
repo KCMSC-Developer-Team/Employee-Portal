@@ -61,3 +61,10 @@ This is a working starter project, not a formally audited production system. Bef
 
 ## Notes
 The profile stores education and job experience sections as JSON so the full form can evolve without a migration for every optional field. Dedicated structured submodels can be introduced later if reporting on education/job history is needed.
+
+
+### Employee login
+- Employees sign in using their Employee ID and password. New employee accounts start with the Employee ID as the initial password.
+- The Developer seed account uses Employee ID `2603` and email `zarif@kcmsc.edu.bd`; the seed sets its initial password to `2603`. Change this after signing in.
+- Excel/CSV imports provide a column-mapping step and create employee login accounts for imported rows. Map both English name and Employee ID.
+- Only the Developer can bulk-remove employees. Employee ID `2603` is protected from bulk deletion.

@@ -11,8 +11,15 @@ export async function POST(req:Request){
  const fields=Object.fromEntries(editable.map(k=>[k,String(body.fields?.[k]??"").trim()||null]));
  if(body.mode==="create"){
   if(!STAFF_ROLES.includes(role))return NextResponse.json({error:"Only authorised employees can create employees."},{status:403});
-  if(!body.email||!body.password||body.password.length<10)return NextResponse.json({error:"A login email and password of at least 10 characters are required."},{status:400});
-  try { const hash=await bcrypt.hash(body.password,12);const user=await prisma.user.create({data:{email:String(body.email).toLowerCase(),passwordHash:hash,role:Role.EMPLOYEE,createdById:id,employee:{create:fields as any}}});await prisma.auditLog.create({data:{actorId:id,action:"CREATE_EMPLOYEE",entityType:"Employee",entityId:user.employee?.id}});return NextResponse.json({message:"Employee account created.",redirect:"/employees"}); } catch { return NextResponse.json({error:"Could not create account. Check duplicate email or employee ID."},{status:400}); }
+  const employeeId=String(fields.employeeId||"").trim();
+  if(!employeeId)return NextResponse.json({error:"Employee ID is required to create the employee login."},{status:400});
+  try {
+   const hash=await bcrypt.hash(employeeId,12);
+   const internalEmail=`employee-${employeeId}@employees.kcmsc.edu.bd`;
+   const user=await prisma.user.create({data:{email:internalEmail,passwordHash:hash,role:Role.EMPLOYEE,createdById:id,employee:{create:{...fields,employeeId} as any}}});
+   await prisma.auditLog.create({data:{actorId:id,action:"CREATE_EMPLOYEE",entityType:"Employee",entityId:user.employee?.id}});
+   return NextResponse.json({message:"Employee profile and login created. Initial password is the employee ID; ask the employee to change it after signing in.",redirect:"/employees"});
+  } catch { return NextResponse.json({error:"Could not create account. Check that the employee ID is unique and the login email is not already used."},{status:400}); }
  }
  if(body.mode==="edit"){
   if(!STAFF_ROLES.includes(role))return NextResponse.json({error:"Forbidden"},{status:403});
