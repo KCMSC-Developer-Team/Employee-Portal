@@ -41,7 +41,7 @@ async function main() {
   if (process.env.SEED_PRINCIPAL_STAFF_ID && process.env.SEED_PRINCIPAL_STAFF_ID === process.env.SEED_ADMIN_STAFF_ID) {
     throw new Error("SEED_PRINCIPAL_STAFF_ID and SEED_ADMIN_STAFF_ID must differ");
   }
-  await bootstrapPerson({ staffId: process.env.SEED_PRINCIPAL_STAFF_ID, name: process.env.SEED_PRINCIPAL_NAME, roleKey: "LEADER", designation: "Principal", label: "Principal (Leader)" });
+  await bootstrapPerson({ staffId: process.env.SEED_PRINCIPAL_STAFF_ID, name: process.env.SEED_PRINCIPAL_NAME, roleKey: "LEADER", designation: "Principal", label: "Principal (Authority)" });
   await bootstrapPerson({ staffId: process.env.SEED_ADMIN_STAFF_ID, name: process.env.SEED_ADMIN_NAME, roleKey: "ADMIN_MANAGER", designation: "Administrator", label: "Administrator" });
 }
 

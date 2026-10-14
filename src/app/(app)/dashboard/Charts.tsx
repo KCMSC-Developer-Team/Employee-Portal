@@ -30,14 +30,14 @@ interface Trend {
 
 // Okabe–Ito colour-blind-safe palette.
 const PALETTE = [
-  "#0072B2",
-  "#E69F00",
-  "#009E73",
-  "#D55E00",
-  "#CC79A7",
-  "#56B4E9",
-  "#F0E442",
-  "#6B7280",
+  "#66864D",
+  "#A7B98D",
+  "#356B4B",
+  "#C68C48",
+  "#8C9D78",
+  "#B9C8AD",
+  "#6F8170",
+  "#D6DFD0",
 ];
 
 function Panel({
@@ -54,7 +54,7 @@ function Panel({
   const cols = data[0] ? Object.keys(data[0]) : [];
 
   return (
-    <section className="card p-4">
+    <section className="card p-4 dashboard-chart-inner">
       <h2 className="mb-2 text-sm font-semibold">{title}</h2>
 
       {empty ? (
@@ -151,7 +151,7 @@ export function BarPanel({ title, data }: { title: string; data: Slice[] }) {
     >
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} layout="vertical" margin={{ left: 8, right: 16 }}>
-          <CartesianGrid horizontal={false} stroke="#e2e8f0" />
+          <CartesianGrid horizontal={false} stroke="#edf0eb" />
 
           <XAxis type="number" allowDecimals={false} />
 
@@ -187,7 +187,7 @@ export function TrendPanel({ title, data }: { title: string; data: Trend[] }) {
     >
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ left: 0, right: 16 }}>
-          <CartesianGrid stroke="#e2e8f0" />
+          <CartesianGrid stroke="#edf0eb" strokeDasharray="3 4" />
 
           <XAxis dataKey="month" tick={{ fontSize: 11 }} />
 
@@ -202,7 +202,7 @@ export function TrendPanel({ title, data }: { title: string; data: Trend[] }) {
             dataKey="submitted"
             name="Submitted"
             stroke={PALETTE[0]}
-            strokeWidth={2}
+            strokeWidth={2.4}
             dot={false}
           />
 
@@ -211,7 +211,7 @@ export function TrendPanel({ title, data }: { title: string; data: Trend[] }) {
             dataKey="approved"
             name="Approved"
             stroke={PALETTE[2]}
-            strokeWidth={2}
+            strokeWidth={2.4}
             dot={false}
           />
 
