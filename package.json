@@ -15,7 +15,9 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
-    "db:seed": "prisma db seed"
+    "db:seed": "prisma db seed",
+    "db:guards": "prisma db execute --file prisma/sql/db_guards.sql --schema prisma/schema.prisma",
+    "maintenance": "tsx scripts/maintenance.ts"
   },
   "prisma": { "seed": "tsx prisma/seed.ts" },
   "dependencies": {

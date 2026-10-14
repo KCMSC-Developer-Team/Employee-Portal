@@ -14,24 +14,32 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const canReview = rs === "ALL" || rs.length > 0;
   const os = scopeFor(user, "observation:read");
   const canObs = os === "ALL" || os.length > 0;
-  const link = "text-slate-600 hover:text-slate-900";
+  const ds = scopeFor(user, "dashboard:read");
+  const canDash = ds === "ALL" || ds.length > 0;
+  const is = scopeFor(user, "import:run");
+  const canImport = is === "ALL" || can(user, "observation:import");
+  const canReport = can(user, "report:read");
+  const link = "rounded-full px-3 py-1.5 text-slate-600 transition hover:bg-slate-100 hover:text-slate-900";
   return (
     <>
-      <header className="border-b border-slate-200 bg-white">
-        <nav className="mx-auto flex max-w-5xl items-center gap-5 px-4 py-3 text-sm">
-          <span className="font-semibold">KCMSC Staff</span>
+      <header className="sticky top-0 z-20 border-b border-slate-200/70 bg-white/75 backdrop-blur-xl">
+        <nav className="mx-auto flex max-w-6xl flex-wrap items-center gap-1 px-4 py-2.5 text-sm">
+          <span className="mr-3 flex items-center gap-2 font-semibold"><span className="grid size-7 place-items-center rounded-lg bg-gradient-to-br from-indigo-600 to-teal-500 text-xs text-white">K</span>KCMSC Staff</span>
           {user.staffMemberId && <Link className={link} href="/me">My profile</Link>}
+          {canDash && <Link className={link} href="/dashboard">Dashboard</Link>}
           {canStaff && <Link className={link} href="/staff">Staff</Link>}
           {canReview && <Link className={link} href="/requests">Requests</Link>}
           {can(user, "audit:read") && <Link className={link} href="/audit">Audit</Link>}
+          {canReport && <Link className={link} href="/reports">Reports</Link>}
+          {canImport && <Link className={link} href="/import">Import</Link>}
           {canObs && <Link className={link} href="/observations">Observations</Link>}
           {canManageRoles(user) && <Link className={link} href="/roles">Roles</Link>}
           {canRef && <Link className={link} href="/reference">Reference data</Link>}
-          <span className="ml-auto text-slate-500">{user.name}</span>
-          <form action={logoutAction}><button className="text-slate-600 underline">Sign out</button></form>
+          <span className="ml-auto hidden text-slate-500 sm:inline">{user.name}</span>
+          <form action={logoutAction}><button className="btn-ghost !py-1.5">Sign out</button></form>
         </nav>
       </header>
-      <div className="mx-auto max-w-5xl px-4 py-6">{children}</div>
+      <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
     </>
   );
 }

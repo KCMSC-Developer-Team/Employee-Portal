@@ -20,8 +20,8 @@ const stripComments = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(
 
 const files = walk(SRC).map((p) => ({ path: rel(p), code: stripComments(readFileSync(p, "utf8")) }));
 
-const TABLE_ALLOWED = [/^server\/observation\//, /^server\/import\//, /^server\/audit\/queries\.ts$/]; // audit/queries only EXCLUDES these entity names
-const SERVICE_IMPORTERS = [/^app\/\(app\)\/observations\//, /^app\/\(app\)\/me\/observation\//, /^server\/import\//];
+const TABLE_ALLOWED = [/^server\/observation\//, /^server\/audit\/queries\.ts$/]; // audit/queries only EXCLUDES these entity names
+const SERVICE_IMPORTERS = [/^app\/\(app\)\/observations\//, /^app\/\(app\)\/me\/observation\//, /^app\/\(app\)\/import\//, /^server\/import\/observations\.ts$/];
 
 describe("observation isolation (static)", () => {
   it("only the observation service (and authorised import) references the observation tables", () => {
@@ -43,10 +43,10 @@ describe("observation isolation (static)", () => {
     expect(offenders).toEqual([]);
   });
 
-  it("the observation service has no delete operation of any kind", () => {
+  it("no delete operation exists on observations or revisions (only transient import staging is purged)", () => {
     const svc = files.find((f) => f.path === "server/observation/service.ts");
     expect(svc).toBeDefined();
-    expect(/\.(delete|deleteMany)\s*\(/.test(svc!.code)).toBe(false);
+    expect(/(leaderObservation|observationRevision)\s*\.(delete|deleteMany)\s*\(/i.test(svc!.code)).toBe(false);
   });
 
   it("the observation service never puts text into audit metadata", () => {

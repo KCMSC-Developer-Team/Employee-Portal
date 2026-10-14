@@ -27,8 +27,8 @@ const securityHeaders = [
 const config: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
-  // Photo uploads go through server actions (3 MB limit enforced in code).
-  experimental: { serverActions: { bodySizeLimit: "4mb" } },
+  // Photo (3 MB) and Excel import (5 MB) uploads go through server actions; limits are enforced in code.
+  experimental: { serverActions: { bodySizeLimit: "6mb" } },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

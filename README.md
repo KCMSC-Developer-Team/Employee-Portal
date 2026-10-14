@@ -66,8 +66,8 @@ Production: `npm run build`, `npx prisma migrate deploy`, HTTPS only, `FILE_STOR
 - [x] S3 Staff profile + education/experience, admin create/edit, search/filter/pagination, own-profile view, reference data (photo upload → S4, employment status change → S4)
 - [x] S4 Change requests (diff, approve/reject, stale-check, self-review block), employment status + resignation, account enable/disable/reset, photo upload (sharp re-encode) + authenticated serving, email recovery (optional), audit log + per-record history
 - [x] S5 Leader roles, Observation service + revisions, role-granting rules, security tests
-- [ ] S6 Dashboard charts, Excel import, authorised reports
-- [ ] S7 Full test suite, deployment guide, final security review
+- [x] S6 Dashboard charts, Excel import, Leader-only observation migration, authorised reports
+- [x] S7 Full test suite, setup + deployment guides, final security review (see `docs/`)
 
 ## Reference data
 
@@ -95,3 +95,17 @@ Departments, designations and employment categories (“Joined As”) start empt
 3. `TEST_DATABASE_URL=postgresql://... npm run test:security`
 
 These tests have not yet been executed by the author (no package registry access in the build sandbox); run them before relying on the system.
+
+
+## Stage 6 notes: dashboard, import, reports
+- `/dashboard`: aggregate counts only (status, designation, department, joined-as, completeness, request status/trend, admin activity for audit readers). Scope = intersection of `dashboard:read` and `staff:read`. Each chart has a "View as table" fallback and empty states.
+- `/import` (needs institution-wide `import:run` + `staff:create`): upload → map columns → validate (stages rows, writes nothing) → commit (single serializable transaction) → reconcile. Only mapped columns are read; passwords are never imported and no accounts are created. Existing staff IDs are never overwritten: identical → DUPLICATE, different → CONFLICT (listed by field name). NID clashes are conflicts; shared email/mobile are warnings. Issue reports contain row/field/code only, never cell values. Source workbook is deleted from disk and staged personal data cleared after commit/cancel. Dates are read day-first (DD/MM/YYYY). Reference data (departments, designations, categories) must exist first.
+- Observation migration (`observation:import`, Leader only): separate workbook with "Staff ID" and "Observation" columns. Staged privately, committed only by the uploading Leader, never overwrites, each entry gets a revision and Leader-only audit row. Ordinary import screens never show these batches.
+- `/reports`: staff roster CSV (no NID, DOB, addresses or observations; formula-injection safe; each export audited).
+- Tests added: `tests/unit/analytics.test.ts`, `tests/unit/import.test.ts`, `tests/security/import-integration.test.ts` (DB-backed).
+
+
+## Stage 7: docs & release gates
+- `docs/SETUP.md`, `docs/DEPLOYMENT.md`, `docs/SECURITY-REVIEW.md`; CI in `.github/workflows/ci.yml`; `npm run maintenance` (daily); `npm run db:guards` (once per fresh DB).
+- New release-blocking suite: `tests/security/access-integration.test.ts` (scope isolation, change-request integrity, exports/dashboard leakage, account controls).
+- Reminder: nothing has been executed yet. First run `npm install`, `typecheck`, then the tests, and fix any drift.

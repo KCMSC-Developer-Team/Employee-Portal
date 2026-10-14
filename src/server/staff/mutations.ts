@@ -43,6 +43,21 @@ function educationRows(i: StaffUpdateInput) {
 const rowHasData = (r: { institution: string | null; boardOrUniversity: string | null; subject: string | null; passingYear: number | null; result: string | null; title: string | null }) =>
   hasRowContent({ a: r.institution, b: r.boardOrUniversity, c: r.subject, d: r.passingYear, e: r.result, f: r.title });
 
+/** Nested-create payload for a new StaffMember (shared by the admin form and the Excel import commit). */
+export function staffCreateData(input: StaffCreateInput) {
+  return {
+    staffId: input.staffId,
+    ...scalarData(input),
+    education: { create: educationRows(input).filter(rowHasData) },
+    experience: {
+      create: EXP_SLOTS.flatMap((s) => {
+        const r = input.experience[s];
+        return hasRowContent(r) ? [{ slot: Number(s), organization: r.organization, designation: r.designation, startDate: toDate(r.startDate), endDate: toDate(r.endDate) }] : [];
+      }),
+    },
+  };
+}
+
 export async function createStaff(
   actor: AuthUser,
   input: StaffCreateInput,
@@ -53,17 +68,7 @@ export async function createStaff(
 
   return db.$transaction(async (tx) => {
     const staff = await tx.staffMember.create({
-      data: {
-        staffId: input.staffId,
-        ...scalarData(input),
-        education: { create: educationRows(input).filter(rowHasData) },
-        experience: {
-          create: EXP_SLOTS.flatMap((s) => {
-            const r = input.experience[s];
-            return hasRowContent(r) ? [{ slot: Number(s), organization: r.organization, designation: r.designation, startDate: toDate(r.startDate), endDate: toDate(r.endDate) }] : [];
-          }),
-        },
-      },
+      data: staffCreateData(input),
       select: { id: true },
     });
     let temporaryPassword: string | undefined;

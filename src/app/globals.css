@@ -1,5 +1,18 @@
 @import "tailwindcss";
 
+:root { color-scheme: light; }
 body {
-  @apply bg-slate-50 text-slate-900 antialiased;
+  @apply text-slate-900 antialiased;
+  background: radial-gradient(1200px 500px at 10% -10%, #e0e7ff55, transparent), radial-gradient(900px 400px at 100% 0%, #ccfbf155, transparent), #f8fafc;
+  min-height: 100vh;
+  font-feature-settings: "cv11", "ss01";
 }
+/* Shared building blocks */
+.card { @apply rounded-2xl border border-slate-200/80 bg-white/90 shadow-sm backdrop-blur transition hover:shadow-md; }
+.btn { @apply inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-slate-700 active:scale-[.98] disabled:opacity-50; }
+.btn-ghost { @apply inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 active:scale-[.98]; }
+.input { @apply rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200; }
+.badge { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium; }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+main > * , .rise { animation: rise .35s ease both; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
