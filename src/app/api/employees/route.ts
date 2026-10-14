@@ -10,7 +10,7 @@ export async function POST(req:Request){
  const body=await req.json();const role=(session.user as any).role;const id=(session.user as any).id;
  const fields=Object.fromEntries(editable.map(k=>[k,String(body.fields?.[k]??"").trim()||null]));
  if(body.mode==="create"){
-  if(!STAFF_ROLES.includes(role))return NextResponse.json({error:"Only authorised staff can create employees."},{status:403});
+  if(!STAFF_ROLES.includes(role))return NextResponse.json({error:"Only authorised employees can create employees."},{status:403});
   if(!body.email||!body.password||body.password.length<10)return NextResponse.json({error:"A login email and password of at least 10 characters are required."},{status:400});
   try { const hash=await bcrypt.hash(body.password,12);const user=await prisma.user.create({data:{email:String(body.email).toLowerCase(),passwordHash:hash,role:Role.EMPLOYEE,createdById:id,employee:{create:fields as any}}});await prisma.auditLog.create({data:{actorId:id,action:"CREATE_EMPLOYEE",entityType:"Employee",entityId:user.employee?.id}});return NextResponse.json({message:"Employee account created.",redirect:"/employees"}); } catch { return NextResponse.json({error:"Could not create account. Check duplicate email or employee ID."},{status:400}); }
  }
