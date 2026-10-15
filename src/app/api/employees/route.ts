@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { currentSession, STAFF_ROLES } from "@/lib/auth";
 import { Prisma, Role } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { profileEditableFields } from "@/lib/profile-changes";
 
 const scalarEditable = ["fullNameEnglish","fullNameBangla","employeeId","designation","position","department","supervisor","fatherName","motherName","gender","bloodGroup","religion","maritalStatus","permanentAddress","presentAddress","nidPassport","homeDistrict","mobile","personalEmail","photoUrl"];
 const jsonEditable = ["secondary","higherSecondary","graduation","masters","bed","med","ntrca","otherTraining","jobExperiences"];
@@ -58,7 +59,7 @@ function cleanFields(source:unknown){
  }
  for(const key of jsonEditable){
   const value=input[key];
-  if(value===undefined||value===null)continue;
+  if(value===undefined||value===null||value==="")continue;
   if(key==="jobExperiences"){
    if(!Array.isArray(value)||value.length>3||value.some(experience=>{
     if(!experience||typeof experience!=="object"||Array.isArray(experience))return true;
@@ -100,7 +101,13 @@ export async function POST(req:Request){
  }
  if(body.mode==="request"){
   const employee=await prisma.employee.findUnique({where:{userId:id}});if(!employee||employee.id!==body.employeeId)return NextResponse.json({error:"You may edit only your own profile."},{status:403});
-  const request=await prisma.changeRequest.create({data:{employeeId:employee.id,submittedById:id,payload:fields as any}});await prisma.auditLog.create({data:{actorId:id,action:"SUBMIT_PROFILE_CHANGE",entityType:"ChangeRequest",entityId:request.id}});return NextResponse.json({message:"Update request submitted for approval.",redirect:"/my-profile"});
+  const baseline=Object.fromEntries(profileEditableFields.map(key=>{const value=employee[key as keyof typeof employee];return [key,value instanceof Date?value.toISOString():value??null]}));
+  const payload={...fields,_baseline:baseline};
+  await prisma.$transaction(async tx=>{
+   const request=await tx.changeRequest.create({data:{employeeId:employee.id,submittedById:id,payload:payload as any}});
+   await tx.auditLog.create({data:{actorId:id,action:"SUBMIT_PROFILE_CHANGE",entityType:"ChangeRequest",entityId:request.id}});
+  });
+  return NextResponse.json({message:"Update request submitted for approval.",redirect:"/my-profile"});
  }
  return NextResponse.json({error:"Unsupported operation."},{status:400});
 }
